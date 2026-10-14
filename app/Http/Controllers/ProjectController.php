@@ -80,24 +80,61 @@ class ProjectController extends Controller
         return view('projects.create', compact('workspace'));
     }
 
+    /**
+     * Règles communes aux dates : valide, pas dans le passé, au plus +10 ans,
+     * et après $after si fourni. $unchanged = valeur déjà enregistrée, tolérée
+     * même si elle est passée (modification d'un projet existant).
+     */
+    private static function dateRules(?string $after = null, ?string $unchanged = null): array
+    {
+        $rules = [
+            'nullable',
+            'date',
+            'before_or_equal:' . now()->addYears(10)->toDateString(),
+            function (string $attribute, mixed $value, \Closure $fail) use ($unchanged) {
+                if ($value === $unchanged) {
+                    return;
+                }
+                $date = strtotime((string) $value);
+                if ($date !== false && $date < strtotime('today')) {
+                    $fail($attribute === 'start_date'
+                        ? 'La date de début ne peut pas être dans le passé.'
+                        : 'La date de fin ne peut pas être dans le passé.');
+                }
+            },
+        ];
+        if ($after) {
+            $rules[] = 'after_or_equal:' . $after;
+        }
+        return $rules;
+    }
+
+    private static function dateMessages(): array
+    {
+        return [
+            'end_date.after_or_equal'    => 'La date de fin doit être égale ou postérieure à la date de début.',
+            'start_date.before_or_equal' => 'La date de début est trop lointaine (maximum : 10 ans).',
+            'end_date.before_or_equal'   => 'La date de fin est trop lointaine (maximum : 10 ans).',
+        ];
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
             'title'               => 'required|string|max:255',
             'description'         => 'nullable|string',
             'status'              => 'required|in:planning,active,on_hold,completed,cancelled',
-            'start_date'          => 'nullable|date',
-            'end_date'            => 'nullable|date|after_or_equal:start_date',
+            'start_date'          => self::dateRules(),
+            'end_date'            => self::dateRules('start_date'),
             'workspace_id'        => ['required', \Illuminate\Validation\Rule::exists('workspaces', 'id')->where('user_id', Auth::id())],
             'tasks'               => 'nullable|array',
             'tasks.*.title'       => 'required|string|max:255',
             'tasks.*.priority'    => 'nullable|in:low,medium,high,urgent',
             'tasks.*.status'      => 'nullable|in:todo,in_progress,review,done',
             'tasks.*.due_date'    => 'nullable|date',
-        ], [
+        ], self::dateMessages() + [
             'title.required'           => 'Le titre est obligatoire.',
             'workspace_id.required'    => 'Un espace de travail est obligatoire.',
-            'end_date.after_or_equal'  => 'La date de fin doit être après la date de début.',
             'tasks.*.title.required'   => 'Le titre de chaque tâche est obligatoire.',
         ]);
 
@@ -161,9 +198,9 @@ class ProjectController extends Controller
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
             'status'      => 'required|in:planning,active,on_hold,completed,cancelled',
-            'start_date'  => 'nullable|date',
-            'end_date'    => 'nullable|date|after_or_equal:start_date',
-        ]);
+            'start_date'  => self::dateRules(null, $project->start_date?->format('Y-m-d')),
+            'end_date'    => self::dateRules('start_date', $project->end_date?->format('Y-m-d')),
+        ], self::dateMessages());
 
         $project->update($validated);
 

@@ -60,11 +60,16 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Date de début</label>
                     <input type="date" name="start_date" value="{{ old('start_date') }}"
-                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                           min="{{ now()->toDateString() }}" max="{{ now()->addYears(10)->toDateString() }}"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 @error('start_date') border-red-400 @enderror">
+                    @error('start_date')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Date de fin</label>
                     <input type="date" name="end_date" value="{{ old('end_date') }}"
+                           min="{{ now()->toDateString() }}" max="{{ now()->addYears(10)->toDateString() }}"
                            class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 @error('end_date') border-red-400 @enderror">
                     @error('end_date')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>

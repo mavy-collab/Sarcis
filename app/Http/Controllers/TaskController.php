@@ -22,9 +22,11 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'status'      => 'required|in:todo,in_progress,review,done',
             'priority'    => 'required|in:low,medium,high,urgent',
-            'due_date'    => 'nullable|date',
+            'due_date'    => ['nullable', 'date', 'after_or_equal:2000-01-01', 'before_or_equal:' . now()->addYears(10)->toDateString()],
             'assigned_to' => 'nullable|exists:users,id',
         ], [
+            'due_date.after_or_equal'  => "L'échéance est trop ancienne (minimum : 01/01/2000).",
+            'due_date.before_or_equal' => "L'échéance est trop lointaine (maximum : 10 ans).",
             'title.required' => 'Le titre est obligatoire.',
         ]);
 
@@ -83,10 +85,13 @@ class TaskController extends Controller
             'description'        => 'nullable|string',
             'status'             => 'required|in:todo,in_progress,review,done',
             'priority'           => 'required|in:low,medium,high,urgent',
-            'due_date'           => 'nullable|date',
+            'due_date'           => ['nullable', 'date', 'after_or_equal:2000-01-01', 'before_or_equal:' . now()->addYears(10)->toDateString()],
             'assigned_to'        => 'nullable|exists:users,id',
             'recurrence_type'    => 'nullable|in:daily,weekly,monthly',
             'recurrence_ends_at' => 'nullable|date',
+        ], [
+            'due_date.after_or_equal'  => "L'échéance est trop ancienne (minimum : 01/01/2000).",
+            'due_date.before_or_equal' => "L'échéance est trop lointaine (maximum : 10 ans).",
         ]);
 
         $validated['is_recurring']    = $request->boolean('is_recurring');

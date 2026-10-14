@@ -58,6 +58,10 @@ class PlanController extends Controller
 
     public function downgrade()
     {
+        if (Auth::user()->isAdmin()) {
+            return redirect()->route('plans.index')->with('info', 'Le plan Pro est permanent pour un administrateur.');
+        }
+
         Auth::user()->update(['plan' => 'free', 'plan_expires_at' => null]);
         return redirect()->route('plans.index')->with('success', 'Vous êtes repassé au plan Gratuit.');
     }

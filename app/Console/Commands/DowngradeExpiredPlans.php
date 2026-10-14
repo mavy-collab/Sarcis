@@ -13,6 +13,7 @@ class DowngradeExpiredPlans extends Command
     public function handle(): void
     {
         $count = User::where('plan', '!=', 'free')
+            ->where('is_admin', false)
             ->whereNotNull('plan_expires_at')
             ->where('plan_expires_at', '<', now())
             ->update(['plan' => 'free', 'plan_expires_at' => null]);

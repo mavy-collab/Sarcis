@@ -64,6 +64,17 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    protected static function booted(): void
+    {
+        // Un administrateur reste en plan Pro permanent (jamais d'expiration ni de rétrogradation)
+        static::saving(function (User $user) {
+            if ($user->is_admin && ($user->plan !== 'pro' || $user->plan_expires_at !== null)) {
+                $user->plan = 'pro';
+                $user->plan_expires_at = null;
+            }
+        });
+    }
+
     public function isAdmin(): bool
     {
         return (bool) $this->is_admin;
